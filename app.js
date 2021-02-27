@@ -118,6 +118,14 @@ function setup() {
     };
 
 
+    let policeTween = new TWEEN.Tween(sprites.police.position)
+        .to({x: '+800'}, 5000)
+        .repeat(5)
+        .yoyo(true)
+        .easing(TWEEN.Easing.Bounce.InOut)
+        .start();
+    // console.log(sprites.police.position);
+
     state = play;
 
     app.ticker.add(delta => gameLoop(delta));
@@ -136,8 +144,7 @@ function play(delta) {
     sprites.car.y += sprites.car.vy;
     sprites.car.x += sprites.car.vx;
 
-    sprites.police.vx = 1;
-    sprites.police.vy = -1;
+    TWEEN.update();    
 
     if (hitTestRectangle(sprites.car, sprites.police) || hitTestRectangle(sprites.car, sprites.thing)) {
         sprites.car.position.set(0);
