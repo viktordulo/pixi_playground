@@ -1,9 +1,19 @@
+import * as PIXIParticles from 'pixi-particles'
+import * as TWEEN from '@tweenjs/tween.js'
+import * as PIXI from 'pixi.js'
+import car from './PNG/Car_1_Main_Positions/Car_1_01.png'
+import grass from './PNG/Background_Tiles/Grass_Tile.png'
+import police from './PNG/Car_2_Main_Positions/Car_2_01.png'
+import water from './PNG/Background_Tiles/Water_Tile.png'
+import soil from './PNG/Background_Tiles/Soil_Tile.png'
+import bubble from './PNG/soap_bubbles_PNG37-min.png'
+import emitJson from './emitter.json'
+
 const loader = PIXI.Loader.shared,
     resources = loader.resources,
     Sprite = PIXI.Sprite,
     TextureCache = PIXI.utils.TextureCache
-
-
+//
 
 let app = new PIXI.Application({
     height: 450,
@@ -40,24 +50,43 @@ let gameOverMessage = new PIXI.Text('GAME OVER', gameOverStyle);
 
 loader
     .add([
-        'PNG/Car_1_Main_Positions/Car_1_01.png',
-        'PNG/Background_Tiles/Grass_Tile.png',
-        'PNG/Car_2_Main_Positions/Car_2_01.png',
-        'PNG/Background_Tiles/Water_Tile.png',
-        'PNG/Background_Tiles/Soil_Tile.png'
+        car,
+        grass,
+        police,
+        water,
+        soil,
+        bubble
     ])
     .load(setup)
+//
+
+let emitter;
+let elapsed = Date.now();
+
+let mouseX = 100;
+let mouseY = 100;
+app.view.addEventListener('click', event => {
+    mouseX = event.clientX;
+    mouseY = event.clientY;
+    let emitterTween = new TWEEN.Tween(emitter.spawnPos)
+        .to({x: mouseX, 
+            y: mouseY}, 1000)
+        // .onComplete(TWEEN.remove(emitterTween))
+        .start();
+    console.log(mouseX, mouseY);
+    console.log(emitter.spawnPos);
+})
 
 function setup() {
-    sprites.car = new Sprite(resources["PNG/Car_1_Main_Positions/Car_1_01.png"].texture);
-    sprites.police = new Sprite(resources["PNG/Car_2_Main_Positions/Car_2_01.png"].texture);
-    sprites.texture = new Sprite(resources["PNG/Background_Tiles/Grass_Tile.png"].texture);
-    let someTexture = TextureCache['PNG/Background_Tiles/Soil_Tile.png'];
+    sprites.car = new Sprite(resources[car].texture);
+    sprites.police = new Sprite(resources[police].texture);
+    sprites.texture = new Sprite(resources[grass].texture);
+    let someTexture = TextureCache[soil];
     let rectangle = new PIXI.Rectangle(395, 54, 42, 44);
     someTexture.frame = rectangle;
     sprites.thing = new Sprite(someTexture);
 
-    sprites.texture.texture = TextureCache['PNG/Background_Tiles/Water_Tile.png'];
+    sprites.texture.texture = TextureCache[water];
     sprites.car.scale.set(0.2);
     sprites.car.vx = 0;
     sprites.car.vy = 0;
@@ -119,13 +148,19 @@ function setup() {
 
 
     let policeTween = new TWEEN.Tween(sprites.police.position)
-        .to({x: '+800'}, 5000)
+        .to({ x: '+800' }, 5000)
         .repeat(5)
         .yoyo(true)
         .easing(TWEEN.Easing.Bounce.InOut)
         .start();
-    // console.log(sprites.police.position);
+    //
 
+    emitter = new PIXIParticles.Emitter(app.stage,
+        TextureCache[bubble],
+        JSON.parse(JSON.stringify(emitJson))
+    );
+    // emitter.emit = true;
+    
     state = play;
 
     app.ticker.add(delta => gameLoop(delta));
@@ -144,7 +179,11 @@ function play(delta) {
     sprites.car.y += sprites.car.vy;
     sprites.car.x += sprites.car.vx;
 
-    TWEEN.update();    
+    TWEEN.update();
+
+    let now = Date.now();
+    emitter.update((now - elapsed) * 0.001);
+    elapsed = now;
 
     if (hitTestRectangle(sprites.car, sprites.police) || hitTestRectangle(sprites.car, sprites.thing)) {
         sprites.car.position.set(0);
